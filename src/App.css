@@ -77,3 +77,7 @@ select option {
   background-color: #333;
   color: #fff;
 }
+
+.status {
+  display: none;
+}

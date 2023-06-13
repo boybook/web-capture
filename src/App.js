@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import './App.css';
 
 const commonResolutions = [
@@ -27,71 +27,71 @@ function App() {
         navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
     }, []);
 
+    const loadStream = useCallback(() => {
+      if (typeof currentStream !== 'undefined') {
+          stopMediaTracks(currentStream);
+      }
+      const videoConstraints = {};
+      if (selectedSource === '') {
+          videoConstraints.facingMode = 'environment';
+      } else {
+          videoConstraints.deviceId = { exact: selectedSource };
+      }
+      const selectedSizeArray = selectedSize.split('x');
+      if (selectedSizeArray.length === 2) {
+          videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
+          videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
+      }
+      const constraints = {
+          video: videoConstraints,
+          audio: {
+              deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
+          },
+      };
+      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+          setCurrentStream(stream);
+          const audioContext = new AudioContext();
+          const source = audioContext.createMediaStreamSource(stream);
+          
+          console.log(source.channelCount);
+          console.log(audioContext.sampleRate);
+          videoRef.current.srcObject = stream;
+          // 在元数据已加载后获取视频分辨率
+          videoRef.current.onloadedmetadata = () => {
+            const track = stream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            const sizeList = []
+            commonResolutions.forEach(({width, height}) => {
+                if (width >= capabilities.width.min && width <= capabilities.width.max &&
+                    height >= capabilities.height.min && height <= capabilities.height.max) {
+                    const option = {
+                      'width': width,
+                      'height': height
+                    }
+                    // if (option.value === selectedSize) {
+                    //     selectedSize(option.value)
+                    // }
+                    sizeList.push(option);
+                }
+            });
+            setSizes(sizeList);
+            setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
+          };
+          return navigator.mediaDevices.enumerateDevices();
+      }).then(gotDevices).catch(handleError);
+    }, [currentStream, selectedSource, selectedSize, selectedAudioSource]);
+
     // 当手动切换当前已选择的任意属性时，重新获取流
     useEffect(() => {
         if (selectedSize || selectedSource || selectedAudioSource) {
             loadStream();
         }
-    }, [selectedSize, selectedSource, selectedAudioSource]);
-
+    }, [selectedSize, selectedSource, selectedAudioSource, loadStream]);
+    
     function stopMediaTracks(stream) {
         stream.getTracks().forEach(track => {
             track.stop();
         });
-    }
-
-    function loadStream() {
-        if (typeof currentStream !== 'undefined') {
-            stopMediaTracks(currentStream);
-        }
-        const videoConstraints = {};
-        if (selectedSource === '') {
-            videoConstraints.facingMode = 'environment';
-        } else {
-            videoConstraints.deviceId = { exact: selectedSource };
-        }
-        const selectedSizeArray = selectedSize.split('x');
-        if (selectedSizeArray.length === 2) {
-            videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
-            videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
-        }
-        const constraints = {
-            video: videoConstraints,
-            audio: {
-                deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
-            },
-        };
-        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-            setCurrentStream(stream);
-            const audioContext = new AudioContext();
-            const source = audioContext.createMediaStreamSource(stream);
-            
-            console.log(source.channelCount);
-            console.log(audioContext.sampleRate);
-            videoRef.current.srcObject = stream;
-            // 在元数据已加载后获取视频分辨率
-            videoRef.current.onloadedmetadata = () => {
-              const track = stream.getVideoTracks()[0];
-              const capabilities = track.getCapabilities();
-              const sizeList = []
-              commonResolutions.forEach(({width, height}) => {
-                  if (width >= capabilities.width.min && width <= capabilities.width.max &&
-                      height >= capabilities.height.min && height <= capabilities.height.max) {
-                      const option = {
-                        'width': width,
-                        'height': height
-                      }
-                      // if (option.value === selectedSize) {
-                      //     selectedSize(option.value)
-                      // }
-                      sizeList.push(option);
-                  }
-              });
-              setSizes(sizeList);
-              setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
-            };
-            return navigator.mediaDevices.enumerateDevices();
-        }).then(gotDevices).catch(handleError);
     }
 
     function gotDevices(mediaDevices) {
@@ -109,10 +109,10 @@ function App() {
 
     return (
         <div className="web-capture-app">
-            <div class="video-area">
+            <div className="video-area">
                 <video ref={videoRef} autoPlay playsInline controls />
             </div>
-            <div class="settings">
+            <div className="settings">
                 <button onClick={loadStream}>Start</button>
                 <select value={selectedSource} onChange={e => setSelectedSource(e.target.value)}>
                     {sources.map((source, index) =>
@@ -130,7 +130,7 @@ function App() {
                     )}
                 </select>
             </div>
-            <p style="display: none">
+            <p className="status">
               {status}
             </p>
         </div>
