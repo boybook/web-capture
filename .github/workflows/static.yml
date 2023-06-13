@@ -37,6 +37,6 @@ jobs:
           # Specifies if this action should checkout the code
           checkout: main # optional, default is true
           # Specifies the path of the static assets after building
-          path: dist # optional, default is dist
+          path: build # optional, default is dist
           # Specifies the command to run after npm ci for the build
           build_command: npm run build # optional, default is npm run build
