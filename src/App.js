@@ -130,6 +130,9 @@ function App() {
                     )}
                 </select>
             </div>
+            <p style="display: none">
+              {status}
+            </p>
         </div>
     );
 }
