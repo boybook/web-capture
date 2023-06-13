@@ -71,7 +71,7 @@ function App() {
             setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
           };
           return navigator.mediaDevices.enumerateDevices();
-      }).catch(handleError);
+      }).then(gotDevices).catch(handleError);
     // eslint-disable-next-line
     }, [selectedSize, selectedSource, selectedAudioSource]);
 
