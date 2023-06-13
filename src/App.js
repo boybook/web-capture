@@ -50,11 +50,6 @@ function App() {
       };
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
           setCurrentStream(stream);
-          const audioContext = new AudioContext();
-          const source = audioContext.createMediaStreamSource(stream);
-          
-          console.log(source.channelCount);
-          console.log(audioContext.sampleRate);
           videoRef.current.srcObject = stream;
           // 在元数据已加载后获取视频分辨率
           videoRef.current.onloadedmetadata = () => {
@@ -83,10 +78,8 @@ function App() {
 
     // 当手动切换当前已选择的任意属性时，重新获取流
     useEffect(() => {
-        if (selectedSize || selectedSource || selectedAudioSource) {
-            loadStream();
-        }
-    }, [selectedSize, selectedSource, selectedAudioSource, loadStream]);
+        loadStream();
+    }, [selectedSize, selectedSource, selectedAudioSource]);
     
     function stopMediaTracks(stream) {
         stream.getTracks().forEach(track => {
@@ -95,7 +88,6 @@ function App() {
     }
 
     function gotDevices(mediaDevices) {
-        console.log(mediaDevices);
         setSources(mediaDevices.filter(device => device.kind === 'videoinput'));
         setAudioSources(mediaDevices.filter(device => device.kind === 'audioinput'));
     }
