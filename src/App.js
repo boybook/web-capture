@@ -28,6 +28,7 @@ function App() {
     }, []);
 
     const loadStream = useCallback(() => {
+      console.log('loadStream')
       if (typeof currentStream !== 'undefined') {
           stopMediaTracks(currentStream);
       }
@@ -63,9 +64,6 @@ function App() {
                       'width': width,
                       'height': height
                     }
-                    // if (option.value === selectedSize) {
-                    //     selectedSize(option.value)
-                    // }
                     sizeList.push(option);
                 }
             });
@@ -73,13 +71,14 @@ function App() {
             setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
           };
           return navigator.mediaDevices.enumerateDevices();
-      }).then(gotDevices).catch(handleError);
-    }, [currentStream, selectedSource, selectedSize, selectedAudioSource]);
+      }).catch(handleError);
+    // eslint-disable-next-line
+    }, [selectedSize, selectedSource, selectedAudioSource]);
 
     // 当手动切换当前已选择的任意属性时，重新获取流
     useEffect(() => {
         loadStream();
-    }, [selectedSize, selectedSource, selectedAudioSource]);
+    }, [selectedSize, selectedSource, selectedAudioSource, loadStream]);
     
     function stopMediaTracks(stream) {
         stream.getTracks().forEach(track => {
@@ -88,6 +87,7 @@ function App() {
     }
 
     function gotDevices(mediaDevices) {
+        console.log(mediaDevices);
         setSources(mediaDevices.filter(device => device.kind === 'videoinput'));
         setAudioSources(mediaDevices.filter(device => device.kind === 'audioinput'));
     }
