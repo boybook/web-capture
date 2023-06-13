@@ -46,7 +46,10 @@ function App() {
       const constraints = {
           video: videoConstraints,
           audio: {
-              deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
+            deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
+            echoCancellation: false,
+            autoGainControl: false,
+            noiseSuppression: false,
           },
       };
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
