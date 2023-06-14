@@ -1,6 +1,14 @@
 # Web Capture
 
-A simple web app to capture your camera.
+A simple web app to capture your camera or external input device.
+
+[Try it now! https://capture.boybook.pro](https://capture.boybook.pro)
+
+![screenshot](.github/images/screenshot.png)
+
+In theory, you can use external capture devices to play Switch games directly in iPadOS17.
+
+But unfortunately, in Safari on iOS, the sound will not play properly for now.
 
 ## Available Scripts
 

@@ -1,5 +1,9 @@
 {
-  "name": "web-capture",
+  "name": "@boybook/web-capture",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boybook/web-capture.git"
+  },
   "version": "0.1.0",
   "private": true,
   "homepage": "https://capture.boybooko.pro/",
