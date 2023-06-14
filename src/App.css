@@ -4,8 +4,9 @@ html {
 
 .web-capture-app {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
 }
 
 .video-area {
@@ -28,7 +29,7 @@ html {
   height: auto;
   margin: 16px;
   padding: 8px 16px;
-  display: inline-flex;
+  display: flex;
   justify-content: space-between;
   gap: 6px;
 }
@@ -80,4 +81,22 @@ select option {
 
 .status {
   display: none;
+}
+
+.about {
+  color: white;
+  text-decoration: none;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+  align-items: center;
+  width: auto;
+  height: auto;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.about:hover {
+  opacity: 1;
 }
