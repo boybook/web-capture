@@ -44,11 +44,12 @@ function App() {
           videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
           videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
       }
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       const constraints = {
           video: videoConstraints,
           audio: {
             deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
-            echoCancellation: false,
+            echoCancellation: isSafari,
             autoGainControl: false,
             noiseSuppression: false,
           },
