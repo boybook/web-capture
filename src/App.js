@@ -201,7 +201,7 @@ function App() {
     }
 
     function rotateVideo() {
-        rotateRef.current = (rotateRef.current + 90) % 360;
+        rotateRef.current = (rotateRef.current - 90) % 360;
         console.log('rotateVideo', rotateRef.current);
         const canvas = canvasRef.current;
         const video = videoRef.current;
@@ -219,7 +219,7 @@ function App() {
 
     return (
         <div className="web-capture-app">
-            <video className="video-base" ref={videoRef} autoPlay playsInline controls/>
+            <video className="video-base" ref={videoRef} autoPlay playsInline controls muted/>
             <div className="video-area">
                 <canvas ref={canvasRef} />
             </div>
