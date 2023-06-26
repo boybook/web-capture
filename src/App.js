@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import './App.css';
 
 const commonResolutions = [
@@ -13,6 +13,7 @@ const commonResolutions = [
 
 function App() {
     const videoRef = useRef(null);
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
     const [currentStream, setCurrentStream] = useState();
     const [sources, setSources] = useState([]);
     const [audioSources, setAudioSources] = useState([]);
@@ -24,11 +25,37 @@ function App() {
     const rotateRef = useRef(0);
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
+    const audioContextRef = useRef(null);
+
+    const gotDevices = useCallback((mediaDevices) => {
+        console.log(mediaDevices);
+        const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
+        const audioDevices = mediaDevices.filter(device => device.kind === 'audioinput');
+        setSources(videoDevices);
+        setAudioSources(audioDevices);
+
+        // 在初次加载时设置选定的设备
+        if (isFirstLoad) {
+            if (videoDevices.length > 0) {
+                setSelectedSource(videoDevices[0].deviceId);
+            }
+
+            if (audioDevices.length > 0) {
+                setSelectedAudioSource(audioDevices[0].deviceId);
+            }
+
+            // 设备加载完成后，设置 isFirstLoad 为 false
+            setIsFirstLoad(false);
+        }
+    }, [isFirstLoad]); // 添加 isFirstLoad 作为依赖项
 
     // 初始化时，获取支持的流，并设置默认值
     useEffect(() => {
-        navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
-    }, []);
+        navigator.mediaDevices.enumerateDevices().then(gotDevices);
+        navigator.mediaDevices.ondevicechange = function () {
+            navigator.mediaDevices.enumerateDevices().then(gotDevices);
+        };
+    }, [gotDevices]);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -121,13 +148,15 @@ function App() {
                     }
                 }
             });
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioContext.createMediaStreamSource(stream);
-            source.connect(audioContext.destination);
-            console.log('audioContext.sampleRate', audioContext.sampleRate); // 打印当前音频采样率
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioContextRef.current.createMediaStreamSource(stream);
+            source.connect(audioContextRef.current.destination);
 
             setSizes(sizeList);
-            setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
+            setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio sampleRate: ${audioContextRef.current.sampleRate} `);
             const canvas = canvasRef.current;
             canvas.width = videoRef.current.videoWidth;
             canvas.height = videoRef.current.videoHeight;
@@ -149,12 +178,6 @@ function App() {
         });
     }
 
-    function gotDevices(mediaDevices) {
-        console.log(mediaDevices);
-        setSources(mediaDevices.filter(device => device.kind === 'videoinput'));
-        setAudioSources(mediaDevices.filter(device => device.kind === 'audioinput'));
-    }
-
     function rotateVideo() {
         rotateRef.current = (rotateRef.current + 90) % 360;
         console.log('rotateVideo', rotateRef.current);
@@ -163,8 +186,7 @@ function App() {
         // 设置canvas的尺寸
         canvas.width = rotateRef.current % 180 === 0 ? video.videoWidth : video.videoHeight;
         canvas.height = rotateRef.current % 180 === 0 ? video.videoHeight : video.videoWidth;
-      }
-      
+    }
 
     function handleError(error) {
         console.error('Error: ', error);
@@ -175,9 +197,9 @@ function App() {
 
     return (
         <div className="web-capture-app">
+            <video className="video-base" ref={videoRef} autoPlay playsInline controls muted/>
             <div className="video-area">
                 <canvas ref={canvasRef} />
-                <video ref={videoRef} autoPlay playsInline controls muted/>
             </div>
             <div className="settings">
                 <button onClick={loadStream}>Start</button>

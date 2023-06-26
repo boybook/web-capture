@@ -17,9 +17,12 @@ html {
   height: auto;
 }
 
-.video-area video {
-  width: 0;
-  height: 0;
+.video-base {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
 }
 
 .video-area canvas {
@@ -85,7 +88,10 @@ select option {
 }
 
 .status {
-  display: none;
+  display: block;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 12px;
+  margin-top: 0;
 }
 
 .about {
