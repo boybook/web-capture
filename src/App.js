@@ -25,22 +25,35 @@ function App() {
     const rotateRef = useRef(0);
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
-    const audioContextRef = useRef(null);
+    // const audioContextRef = useRef(null);
 
     const gotDevices = useCallback((mediaDevices) => {
-        console.log(mediaDevices);
         const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
+        console.log('videoDevices', videoDevices);
         const audioDevices = mediaDevices.filter(device => device.kind === 'audioinput');
+        console.log('audioDevices', audioDevices);
         setSources(videoDevices);
         setAudioSources(audioDevices);
 
         // 在初次加载时设置选定的设备
         if (isFirstLoad) {
-            if (videoDevices.length > 0) {
+            const findVideo = videoDevices.filter(device => device.label.startsWith("VC"));
+            if (findVideo.length > 0) {
+                setSelectedSource(findVideo[0].deviceId);
+            } else if (videoDevices.length > 0) {
                 setSelectedSource(videoDevices[0].deviceId);
             }
-
-            if (audioDevices.length > 0) {
+            const findAudio = audioDevices.filter(device => device.label.startsWith("VC"));
+            if (findAudio.length > 0) {
+                // 寻找label最短的那个
+                let shortest = findAudio[0];
+                for (let i = 1; i < findAudio.length; i++) {
+                    if (findAudio[i].label.length < shortest.label.length) {
+                        shortest = findAudio[i];
+                    }
+                }
+                setSelectedAudioSource(shortest.deviceId);
+            } else if (audioDevices.length > 0) {
                 setSelectedAudioSource(audioDevices[0].deviceId);
             }
 
@@ -52,9 +65,6 @@ function App() {
     // 初始化时，获取支持的流，并设置默认值
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(gotDevices);
-        navigator.mediaDevices.ondevicechange = function () {
-            navigator.mediaDevices.enumerateDevices().then(gotDevices);
-        };
     }, [gotDevices]);
 
     useEffect(() => {
@@ -100,70 +110,72 @@ function App() {
     }
 
     const loadStream = useCallback(() => {
-      console.log('loadStream')
-      if (typeof currentStream !== 'undefined') {
-          stopMediaTracks(currentStream);
-      }
-      const videoConstraints = {};
-      if (selectedSource === '') {
-          videoConstraints.facingMode = 'environment';
-      } else {
-          videoConstraints.deviceId = { exact: selectedSource };
-      }
-      const selectedSizeArray = selectedSize.split('x');
-      if (selectedSizeArray.length === 2) {
-          videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
-          videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
-      }
-      // const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      const constraints = {
-          video: videoConstraints,
-          audio: {
-            deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
-            echoCancellation: false,
-            autoGainControl: false,
-            noiseSuppression: false,
-            sampleRate: 48000
-          },
-      };
-      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
-          setCurrentStream(stream);
-          videoRef.current.srcObject = stream;
-          // 在元数据已加载后获取视频分辨率
-          videoRef.current.onloadedmetadata = () => {
-            const track = stream.getVideoTracks()[0];
-            const capabilities = track.getCapabilities();
-            const sizeList = []
-            commonResolutions.forEach(({width, height}) => {
-                if (width >= capabilities.width.min && width <= capabilities.width.max &&
-                    height >= capabilities.height.min && height <= capabilities.height.max) {
-                    const option = {
-                      'width': width,
-                      'height': height
+        if (selectedSource === '') {
+            return;
+        }
+        console.log('loadStream', sources.filter(s => s.deviceId === selectedSource).map(s => s.label), selectedSize, audioSources.filter(s => s.deviceId === selectedAudioSource).map(s => s.label));
+        if (typeof currentStream !== 'undefined') {
+            stopMediaTracks(currentStream);
+        }
+        const videoConstraints = {};
+        if (selectedSource === '') {
+            videoConstraints.facingMode = 'environment';
+        } else {
+            videoConstraints.deviceId = { exact: selectedSource };
+        }
+        const selectedSizeArray = selectedSize.split('x');
+        if (selectedSizeArray.length === 2) {
+            videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
+            videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
+        }
+        // const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const constraints = {
+            video: videoConstraints,
+            audio: {
+                deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
+                echoCancellation: false,
+                autoGainControl: false,
+                noiseSuppression: false,
+                sampleRate: 48000
+            },
+        };
+        navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+            setCurrentStream(stream);
+            videoRef.current.srcObject = stream;
+            // 在元数据已加载后获取视频分辨率
+            videoRef.current.onloadedmetadata = () => {
+                const track = stream.getVideoTracks()[0];
+                const capabilities = track.getCapabilities();
+                const sizeList = []
+                commonResolutions.forEach(({width, height}) => {
+                    if (width >= capabilities.width.min && width <= capabilities.width.max &&
+                        height >= capabilities.height.min && height <= capabilities.height.max) {
+                        const option = {
+                        'width': width,
+                        'height': height
+                        }
+                        sizeList.push(option);
+                        // 默认1080P
+                        if (selectedSize === '' && option.width === 1920 && option.height === 1080) {
+                            setSelectedSize(`${option.width}x${option.height}`)
+                        }
                     }
-                    sizeList.push(option);
-                    // 默认1080P
-                    if (selectedSize === '' && option.width === 1920 && option.height === 1080) {
-                        setSelectedSize(`${option.width}x${option.height}`)
-                    }
-                }
-            });
-            // if (audioContextRef.current) {
-            //     audioContextRef.current.close();
-            // }
-            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioContextRef.current.createMediaStreamSource(stream);
-            source.connect(audioContextRef.current.destination);
+                });
+                // if (audioContextRef.current) {
+                //     audioContextRef.current.close();
+                // }
+                // audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                // const source = audioContextRef.current.createMediaStreamSource(stream);
+                // source.connect(audioContextRef.current.destination);
 
-            setSizes(sizeList);
-            setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio sampleRate: ${audioContextRef.current.sampleRate} `);
-            const canvas = canvasRef.current;
-            canvas.width = rotateRef.current % 180 === 0 ? videoRef.current.videoWidth : videoRef.current.videoHeight;
-            canvas.height = rotateRef.current % 180 === 0 ? videoRef.current.videoHeight : videoRef.current.videoWidth;
-            renderVideoToCanvas();
-          };
-          return navigator.mediaDevices.enumerateDevices();
-      }).then(gotDevices).catch(handleError);
+                setSizes(sizeList);
+                setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight}`);
+                const canvas = canvasRef.current;
+                canvas.width = rotateRef.current % 180 === 0 ? videoRef.current.videoWidth : videoRef.current.videoHeight;
+                canvas.height = rotateRef.current % 180 === 0 ? videoRef.current.videoHeight : videoRef.current.videoWidth;
+                renderVideoToCanvas();
+            };
+      }).catch(handleError);
     // eslint-disable-next-line
     }, [selectedSize, selectedSource, selectedAudioSource]);
 
@@ -197,7 +209,7 @@ function App() {
 
     return (
         <div className="web-capture-app">
-            <video className="video-base" ref={videoRef} autoPlay playsInline controls muted/>
+            <video className="video-base" ref={videoRef} autoPlay playsInline controls/>
             <div className="video-area">
                 <canvas ref={canvasRef} />
             </div>
