@@ -25,7 +25,7 @@ function App() {
     const rotateRef = useRef(0);
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
-    // const audioContextRef = useRef(null);
+    const audioContextRef = useRef(null);
 
     const gotDevices = useCallback((mediaDevices) => {
         console.log('gotDevices');
@@ -171,15 +171,15 @@ function App() {
                         }
                     }
                 });
-                // if (audioContextRef.current) {
-                //     audioContextRef.current.close();
-                // }
-                // audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-                // const source = audioContextRef.current.createMediaStreamSource(stream);
-                // source.connect(audioContextRef.current.destination);
+                if (audioContextRef.current) {
+                    audioContextRef.current.close();
+                }
+                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContextRef.current.createMediaStreamSource(stream);
+                source.connect(audioContextRef.current.destination);
 
                 setSizes(sizeList);
-                setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight}`);
+                setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio sampleRate: ${audioContextRef.current.sampleRate} `);
                 const canvas = canvasRef.current;
                 canvas.width = rotateRef.current % 180 === 0 ? videoRef.current.videoWidth : videoRef.current.videoHeight;
                 canvas.height = rotateRef.current % 180 === 0 ? videoRef.current.videoHeight : videoRef.current.videoWidth;
