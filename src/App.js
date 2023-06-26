@@ -95,7 +95,8 @@ function App() {
             deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
             echoCancellation: false,
             autoGainControl: false,
-            noiseSuppression: false
+            noiseSuppression: false,
+            sampleRate: 48000
           },
       };
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
@@ -123,6 +124,7 @@ function App() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const source = audioContext.createMediaStreamSource(stream);
             source.connect(audioContext.destination);
+            console.log('audioContext.sampleRate', audioContext.sampleRate); // 打印当前音频采样率
 
             setSizes(sizeList);
             setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
