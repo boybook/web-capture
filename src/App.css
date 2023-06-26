@@ -18,6 +18,10 @@ html {
 }
 
 .video-area video {
+  display: none;
+}
+
+.video-area canvas {
   max-width: 100%;
   height: auto;
 }
