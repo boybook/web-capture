@@ -64,7 +64,7 @@ function App() {
 
     // 初始化时，获取支持的流，并设置默认值
     useEffect(() => {
-        navigator.mediaDevices.enumerateDevices().then(gotDevices);
+        navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(e => alert(e));
     }, [gotDevices]);
 
     useEffect(() => {
@@ -111,6 +111,7 @@ function App() {
 
     const loadStream = useCallback(() => {
         if (selectedSource === '') {
+            navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(e => alert(e));
             return;
         }
         console.log('loadStream', sources.filter(s => s.deviceId === selectedSource).map(s => s.label), selectedSize, audioSources.filter(s => s.deviceId === selectedAudioSource).map(s => s.label));
