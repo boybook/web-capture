@@ -13,6 +13,7 @@ const commonResolutions = [
 
 function App() {
     const videoRef = useRef(null);
+    const mountedRef = useRef(false);
     const [isFirstLoad, setIsFirstLoad] = useState(true);
     const [currentStream, setCurrentStream] = useState();
     const [sources, setSources] = useState([]);
@@ -27,7 +28,7 @@ function App() {
     const contextRef = useRef(null);
     const audioContextRef = useRef(null);
 
-    const gotDevices = useCallback((mediaDevices) => {
+    const gotDevices = (mediaDevices) => {
         console.log('gotDevices');
         const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
         console.log('videoDevices', videoDevices);
@@ -43,7 +44,7 @@ function App() {
             } else if (videoDevices.length > 0) {
                 setSelectedSource(videoDevices[0].deviceId);
             }
-            const findAudio = audioDevices.filter(device => device.label.startsWith("VC"));
+            /*const findAudio = audioDevices.filter(device => device.label.startsWith("VC"));
             if (findAudio.length > 0) {
                 // 寻找label最短的那个
                 let shortest = findAudio[0];
@@ -53,15 +54,19 @@ function App() {
                     }
                 }
                 setSelectedAudioSource(shortest.deviceId);
-            } else if (audioDevices.length > 0) {
+            } else */if (audioDevices.length > 0) {
                 setSelectedAudioSource(audioDevices[0].deviceId);
             }
             setIsFirstLoad(false);
         }
-    }, [isFirstLoad]); // 添加 isFirstLoad 作为依赖项
+    }; // 添加 isFirstLoad 作为依赖项
 
     // 初始化时，获取支持的流，并设置默认值
     useEffect(() => {
+        if (mountedRef.current) {
+            return;
+        }
+        mountedRef.current = true;
         navigator.mediaDevices.getUserMedia({
             audio: false,
             video: true,
@@ -70,12 +75,14 @@ function App() {
             stream.getTracks().forEach(track => {
                 console.log('close', track)
                 track.stop();
+                stream.removeTrack(track);
             });
             return navigator.mediaDevices.enumerateDevices();
         })
         .then(gotDevices)
         .catch(e => alert(e));
-    }, [gotDevices]);
+    // eslint-disable-next-line
+    }, []);
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -192,7 +199,8 @@ function App() {
     // 当手动切换当前已选择的任意属性时，重新获取流
     useEffect(() => {
         loadStream();
-    }, [selectedSize, selectedSource, selectedAudioSource, loadStream]);
+    // eslint-disable-next-line
+    }, [selectedSize, selectedSource, selectedAudioSource]);
     
     function stopMediaTracks(stream) {
         stream.getTracks().forEach(track => {
