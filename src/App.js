@@ -148,9 +148,9 @@ function App() {
                     }
                 }
             });
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-            }
+            // if (audioContextRef.current) {
+            //     audioContextRef.current.close();
+            // }
             audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
             const source = audioContextRef.current.createMediaStreamSource(stream);
             source.connect(audioContextRef.current.destination);
@@ -158,8 +158,8 @@ function App() {
             setSizes(sizeList);
             setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio sampleRate: ${audioContextRef.current.sampleRate} `);
             const canvas = canvasRef.current;
-            canvas.width = videoRef.current.videoWidth;
-            canvas.height = videoRef.current.videoHeight;
+            canvas.width = rotateRef.current % 180 === 0 ? videoRef.current.videoWidth : videoRef.current.videoHeight;
+            canvas.height = rotateRef.current % 180 === 0 ? videoRef.current.videoHeight : videoRef.current.videoWidth;
             renderVideoToCanvas();
           };
           return navigator.mediaDevices.enumerateDevices();
