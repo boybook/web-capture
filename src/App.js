@@ -95,7 +95,7 @@ function App() {
             deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
             echoCancellation: false,
             autoGainControl: false,
-            noiseSuppression: false,
+            noiseSuppression: false
           },
       };
       navigator.mediaDevices.getUserMedia(constraints).then(stream => {
@@ -120,16 +120,9 @@ function App() {
                     }
                 }
             });
-            // Create a new AudioContext
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            // Create a stream source
             const source = audioContext.createMediaStreamSource(stream);
-            // Create a gain node
-            const gainNode = audioContext.createGain();
-            // Connect stream to gain node
-            source.connect(gainNode);
-            // Connect gain node to destination
-            gainNode.connect(audioContext.destination);
+            source.connect(audioContext.destination);
 
             setSizes(sizeList);
             setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
