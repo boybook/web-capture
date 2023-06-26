@@ -77,7 +77,6 @@ function App() {
       if (typeof currentStream !== 'undefined') {
           stopMediaTracks(currentStream);
       }
-      rotateRef.current = 0;
       const videoConstraints = {};
       if (selectedSource === '') {
           videoConstraints.facingMode = 'environment';
@@ -89,12 +88,12 @@ function App() {
           videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
           videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
       }
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      // const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       const constraints = {
           video: videoConstraints,
           audio: {
             deviceId: selectedAudioSource ? {exact: selectedAudioSource} : undefined,
-            echoCancellation: isSafari,
+            echoCancellation: false,
             autoGainControl: false,
             noiseSuppression: false,
           },
@@ -121,6 +120,17 @@ function App() {
                     }
                 }
             });
+            // Create a new AudioContext
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            // Create a stream source
+            const source = audioContext.createMediaStreamSource(stream);
+            // Create a gain node
+            const gainNode = audioContext.createGain();
+            // Connect stream to gain node
+            source.connect(gainNode);
+            // Connect gain node to destination
+            gainNode.connect(audioContext.destination);
+
             setSizes(sizeList);
             setStatus(`Video: ${selectedSource} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio: ${selectedAudioSource} `);
             const canvas = canvasRef.current;
@@ -172,7 +182,7 @@ function App() {
         <div className="web-capture-app">
             <div className="video-area">
                 <canvas ref={canvasRef} />
-                <video ref={videoRef} autoPlay playsInline controls/>
+                <video ref={videoRef} autoPlay playsInline controls muted/>
             </div>
             <div className="settings">
                 <button onClick={loadStream}>Start</button>
