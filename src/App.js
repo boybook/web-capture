@@ -20,7 +20,7 @@ function App() {
     const [sizes, setSizes] = useState([]);
     const [selectedSource, setSelectedSource] = useState('');
     const [selectedAudioSource, setSelectedAudioSource] = useState('');
-    const [selectedSize, setSelectedSize] = useState('');
+    const [selectedSize, setSelectedSize] = useState('1920x1080');
     const [status, setStatus] = useState('Loading...');
     const rotateRef = useRef(0);
     const canvasRef = useRef(null);
@@ -28,6 +28,7 @@ function App() {
     // const audioContextRef = useRef(null);
 
     const gotDevices = useCallback((mediaDevices) => {
+        console.log('gotDevices');
         const videoDevices = mediaDevices.filter(device => device.kind === 'videoinput');
         console.log('videoDevices', videoDevices);
         const audioDevices = mediaDevices.filter(device => device.kind === 'audioinput');
@@ -35,7 +36,6 @@ function App() {
         setSources(videoDevices);
         setAudioSources(audioDevices);
 
-        // 在初次加载时设置选定的设备
         if (isFirstLoad) {
             const findVideo = videoDevices.filter(device => device.label.startsWith("VC"));
             if (findVideo.length > 0) {
@@ -56,15 +56,25 @@ function App() {
             } else if (audioDevices.length > 0) {
                 setSelectedAudioSource(audioDevices[0].deviceId);
             }
-
-            // 设备加载完成后，设置 isFirstLoad 为 false
             setIsFirstLoad(false);
         }
     }, [isFirstLoad]); // 添加 isFirstLoad 作为依赖项
 
     // 初始化时，获取支持的流，并设置默认值
     useEffect(() => {
-        navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(e => alert(e));
+        navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: true,
+        })
+        .then(stream => {
+            stream.getTracks().forEach(track => {
+                console.log('close', track)
+                track.stop();
+            });
+            return navigator.mediaDevices.enumerateDevices();
+        })
+        .then(gotDevices)
+        .catch(e => alert(e));
     }, [gotDevices]);
 
     useEffect(() => {
@@ -111,7 +121,6 @@ function App() {
 
     const loadStream = useCallback(() => {
         if (selectedSource === '') {
-            navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(e => alert(e));
             return;
         }
         console.log('loadStream', sources.filter(s => s.deviceId === selectedSource).map(s => s.label), selectedSize, audioSources.filter(s => s.deviceId === selectedAudioSource).map(s => s.label));
