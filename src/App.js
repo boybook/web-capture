@@ -144,6 +144,7 @@ function App() {
         if (selectedSizeArray.length === 2) {
             videoConstraints.width = { exact: parseInt(selectedSizeArray[0]) };
             videoConstraints.height = { exact: parseInt(selectedSizeArray[1]) };
+            videoConstraints.frameRate = { ideal: 120, min: 30 };
         }
         // const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         const constraints = {
@@ -162,14 +163,16 @@ function App() {
             // 在元数据已加载后获取视频分辨率
             videoRef.current.onloadedmetadata = () => {
                 const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings();
+                const frameRate = settings.frameRate; // 获取帧率
                 const capabilities = track.getCapabilities();
                 const sizeList = []
                 commonResolutions.forEach(({width, height}) => {
                     if (width >= capabilities.width.min && width <= capabilities.width.max &&
                         height >= capabilities.height.min && height <= capabilities.height.max) {
                         const option = {
-                        'width': width,
-                        'height': height
+                            'width': width,
+                            'height': height
                         }
                         sizeList.push(option);
                         // 默认1080P
@@ -186,7 +189,7 @@ function App() {
                 source.connect(audioContextRef.current.destination);
 
                 setSizes(sizeList);
-                setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight} Audio sampleRate: ${audioContextRef.current.sampleRate} `);
+                setStatus(`Video: ${sources.filter(source => source.deviceId === selectedSource).map(source => source.label)} ${videoRef.current.videoWidth}x${videoRef.current.videoHeight}@${frameRate.toFixed(2)}fps | Audio sampleRate: ${audioContextRef.current.sampleRate} `);
                 const canvas = canvasRef.current;
                 canvas.width = rotateRef.current % 180 === 0 ? videoRef.current.videoWidth : videoRef.current.videoHeight;
                 canvas.height = rotateRef.current % 180 === 0 ? videoRef.current.videoHeight : videoRef.current.videoWidth;
